@@ -1,0 +1,19 @@
+{
+  "name": "nbody",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape ./tests/**/*.js",
+    "watch": "nodemon --exec 'clear && tape' './tests/**/*.js'"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^1.4.1",
+    "tape": "^4.2.0"
+  },
+  "dependencies": {
+    "object-assign": "^4.0.1"
+  }
+}
