@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "tape ./tests/**/*.js",
-    "watch": "nodemon --exec 'clear && tape' './tests/**/*.js'"
+    "watch": "nodemon --exec 'clear && tape' './tests/**/*.js'",
+    "build": "make.js"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "browserify": "^11.1.0",
     "nodemon": "^1.4.1",
     "tape": "^4.2.0"
   },

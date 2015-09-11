@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset=utf-8>
+  <style>
+    html, body {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+    }
+    .ball {
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      position: absolute;
+    }
+    #ball1 {
+      background-color: hotpink;
+    }
+    #ball2 {
+      background-color: darkblue;
+    }
+  </style>
+</head>
+<body>
+<div id="ball1" class="ball"></div>
+<div id="ball2" class="ball"></div>
+<div class="ball"></div>
+<script src="nbody.js"></script>
+<script>
+  var b1 = nbody.createBody();
+  var b2 = nbody.createBody();
+  var ball1 = document.getElementById('ball1');
+  var ball2 = document.getElementById('ball2');
+
+  b1.position = [0, 0, 0];
+  b1.mass = 5e7;
+  b2.position = [170, 300, 0];
+  b2.mass = 5e7;
+  
+  var posStyle = function (pos) {
+    return 'left: ' + (pos[0] + 50) + 'px; top: ' + (pos[1] + 50) + 'px;';
+  }
+
+  var tick = function (dt) {
+    requestAnimationFrame(tick);
+    ball1.setAttribute('style', posStyle(b1.position));
+    ball2.setAttribute('style', posStyle(b2.position));
+    nbody.step(16 * 3600);
+  };
+
+  tick();
+
+</script>
+</body>
+</html>
