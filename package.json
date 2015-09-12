@@ -6,7 +6,7 @@
   "scripts": {
     "test": "tape ./tests/**/*.js",
     "watch": "nodemon --exec 'clear && tape' './tests/**/*.js'",
-    "build": "make.js"
+    "make-watch": "nodemon --exec './build.sh' './lib/**/*.js'"
   },
   "author": "",
   "license": "ISC",

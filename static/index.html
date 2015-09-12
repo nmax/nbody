@@ -13,39 +13,58 @@
       width: 100px;
       height: 100px;
       position: absolute;
+      -webkit-will-change: left, top;
+      -moz-will-change: left, top;
+      will-change: left, top;
     }
     #ball1 {
       background-color: hotpink;
     }
-    #ball2 {
+    #ball2, #ball3 {
       background-color: darkblue;
+      width: 50px;
+      height: 50px;
     }
   </style>
 </head>
 <body>
 <div id="ball1" class="ball"></div>
 <div id="ball2" class="ball"></div>
+<div id="ball3" class="ball"></div>
 <div class="ball"></div>
 <script src="nbody.js"></script>
 <script>
   var b1 = nbody.createBody();
   var b2 = nbody.createBody();
+  var b3 = nbody.createBody();
   var ball1 = document.getElementById('ball1');
   var ball2 = document.getElementById('ball2');
+  var ball3 = document.getElementById('ball3');
 
-  b1.position = [0, 0, 0];
+  b1.position = [350, 350, 0];
   b1.mass = 5e7;
-  b2.position = [170, 300, 0];
-  b2.mass = 5e7;
+  b1.radius = 100;
   
-  var posStyle = function (pos) {
-    return 'left: ' + (pos[0] + 50) + 'px; top: ' + (pos[1] + 50) + 'px;';
+
+  b2.position = [370, 350 - 123, 0];
+  b2.mass = 1.5e6;
+  b2.radius = 50;
+  b2.motion = [1.2, 0, 0];
+
+  b3.position = [250 - 200, 350 + 135, 0];
+  b3.radius = 50;
+  b3.mass = 1.5e6;
+  b3.motion = [0.4, 0.3, 0];
+  
+  var posStyle = function (pos, w) {
+    return 'left: ' + (pos[0] - w) + 'px; top: ' + (pos[1] - w) + 'px;';
   }
 
   var tick = function (dt) {
     requestAnimationFrame(tick);
-    ball1.setAttribute('style', posStyle(b1.position));
-    ball2.setAttribute('style', posStyle(b2.position));
+    ball1.setAttribute('style', posStyle(b1.position, 50));
+    ball2.setAttribute('style', posStyle(b2.position, 25));
+    ball3.setAttribute('style', posStyle(b3.position, 25));
     nbody.step(16 * 3600);
   };
 
