@@ -80,9 +80,13 @@ function updateForces (bodies) {
       var grav = computeGravity(currentBody, otherBody, distance);
       var direction = normalize(currentBody, otherBody, distance);
 
-      currentBody.combinedForces[0] += grav * direction[0];
-      currentBody.combinedForces[1] += grav * direction[1];
-      currentBody.combinedForces[2] += grav * direction[2];
+      // Only apply new forces if there is no overlapping to avoid crazy g forces.
+      // lim Fg(r) -> 0 = +inf
+      if (distance > currentBody.radius + otherBody.radius) {
+        currentBody.combinedForces[0] += grav * direction[0];
+        currentBody.combinedForces[1] += grav * direction[1];
+        currentBody.combinedForces[2] += grav * direction[2];
+      }
     }
   }
 }
@@ -129,8 +133,26 @@ function integrateRK4 (body, dt) {
   }
 }
 
+function updateForcesFromMotion (body) {
+  var eKinX = 0.5 * body.mass * (body.initialMotion[0] * body.initialMotion[0]);
+  var eKinY = 0.5 * body.mass * (body.initialMotion[1] * body.initialMotion[1]);
+  var eKinZ = 0.5 * body.mass * (body.initialMotion[2] * body.initialMotion[2]);
+
+  //debugger;
+  body.combinedForces[0] += eKinX;
+  body.combinedForces[1] += eKinY;
+  body.combinedForces[2] += eKinZ;
+
+  delete body.initialMotion;
+}
+
 function moveBodies (type, bodies, dt) {
   bodies.forEach(function (body) {
+
+    if (body.initialMotion) {
+      updateForcesFromMotion(body);
+    }
+
     if (type === 'euler') {
       integrateEuler(body, dt);
     }
