@@ -33,62 +33,12 @@
   </style>
 </head>
 <body>
-<div id="ball1" class="ball"></div>
-<div id="ball2" class="ball"></div>
-<div id="ball3" class="ball"></div>
-<div class="ball"></div>
-<script src="nbody.js"></script>
-<script>
-  var lastTick;
-  var b1 = nbody.createBody();
-  var b2 = nbody.createBody();
-  var b3 = nbody.createBody();
-  var ball1 = document.getElementById('ball1');
-  var ball2 = document.getElementById('ball2');
-  var ball3 = document.getElementById('ball3');
-  var SECOND = 1000;
-  var MINUTE = 60 * SECOND;
-  var HOUR = 60 * MINUTE;
-  var DAY = 24 * HOUR;
+  <div id="global-time"></div>
+  <div id="ball1" class="ball"></div>
+  <div id="ball2" class="ball"></div>
+  <div id="ball3" class="ball"></div>
 
-  b1.position = [350, 350, 0];
-  b1.mass = 15e4;
-  b1.radius = 50;
-  b1.applyForces = false;
-
-  b2.position = [350, 230, 0];
-  b2.mass = 3e3;
-  b2.radius = 30;
-  b2.initialMotion = [2.8e-4, 0, 0];
-
-  // b3.position = [150, 170, 0];
-  // b3.radius = 25;
-  // b3.mass = 1.5e3;
-  // b3.motion = [15e-9, -18.5e-9, 0];
-  
-  var posStyle = function (pos, w) {
-    return 'left: ' + (pos[0] - w) + 'px; top: ' + (pos[1] - w) + 'px;';
-  }
-
-  var tick = function (dt) {
-    var current = Date.now();
-    var elapsed = current - lastTick;
-
-    if (isNaN(elapsed)) {
-      elapsed = 16;
-    }
-
-    requestAnimationFrame(tick);
-
-    ball1.setAttribute('style', posStyle(b1.position, 50));
-    ball2.setAttribute('style', posStyle(b2.position, 30));
-    // ball3.setAttribute('style', posStyle(b3.position, 25));
-
-    nbody.step(elapsed * (HOUR));
-    lastTick = current;
-  };
-
-  tick();
-</script>
+  <script src="nbody.js"></script>
+  <script src="vis.js"></script>
 </body>
 </html>
