@@ -1,21 +1,26 @@
 {
   "name": "nbody",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "naive nbody simulator",
   "scripts": {
     "test": "tape ./tests/**/*.js",
-    "watch": "nodemon --exec 'clear && tape' './tests/**/*.js'",
-    "make-watch": "nodemon --exec './build.sh' './lib/**/*.js'"
+    "build": "rm -rf dist/ && broccoli build dist"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Maximilian Neger",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "lib",
+    "index.js"
+  ],
   "devDependencies": {
-    "browserify": "^11.1.0",
-    "nodemon": "^1.4.1",
+    "broccoli": "^0.16.8",
+    "broccoli-merge-trees": "^0.2.3",
+    "broccoli-multi-builder": "^0.2.8",
     "tape": "^4.2.0"
   },
   "dependencies": {
+    "broccoli-funnel": "^0.2.8",
     "object-assign": "^4.0.1"
   }
 }
