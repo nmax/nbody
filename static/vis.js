@@ -1,24 +1,22 @@
 var b1 = nbody.createBody({
   position: [350, 350, 0],
-  mass: 10e5,
+  mass: 1e6,
   radius: 50,
   isStatic: true
 });
 
 var b2 = nbody.createBody({
-  position: [500, 350, 0],
-  velStart: [0, 6e-7, 0],
-  // velocity: [3e-9, 3e-9, 0],
-  mass: 1e3,
-  radius: 30
+  position: [500, 150, 0],
+  mass: 3e2,
+  radius: 30,
+  startCircular: true
 });
 
 var b3 = nbody.createBody({
-  position: [570, 350, 0],
-  velStart: [0, 4.5e-7, 0],
-  // velocity: [3e-9, 3e-9, 0],
-  mass: 3e3,
-  radius: 30
+  position: [170, 350, 0],
+  mass: 250e3,
+  radius: 30,
+  startCircular: true
 });
 
 
@@ -28,36 +26,36 @@ var ball3 = document.getElementById('ball3');
 var globalTime = document.getElementById('global-time');
 
 
-// b3.position = [150, 170, 0];
-// b3.radius = 25;
-// b3.mass = 1.5e3;
-// b3.motion = [15e-9, -18.5e-9, 0];
-
 var posStyle = function (pos, w) {
-  return 'left: ' + (pos[0] - w) + 'px; top: ' + (pos[1] - w) + 'px;';
+  return 'transform: translate(' + (Math.round(pos[0] - w)) + 'px, ' + (Math.round(pos[1] - w)) + 'px);';
 }
 
+var startOfSim = new Date().getTime();
 var readableTime = function (millies) {
-  var time = new Date(Date.now() + millies);
+  var time = new Date(startOfSim + millies);
   var rough = [time.getDate(), time.getMonth() + 1, time.getFullYear()].join('.');
-  var precise = [time.getHours(), time.getMinutes(), time.getSeconds()].join('.');
-  
-  return rough + ' | ' + precise;
+  var precise = [time.getHours(), time.getMinutes(), time.getSeconds()].join(':');
+  return rough + ' - ' + precise + ' (' + ~~(millies/(1000*60)) + 'min)';
 }
 
+var lastTick = startOfSim;
 var tick = function () {
-  nbody.timer.advance();
   requestAnimationFrame(tick);
 
-  ball1.setAttribute('style', posStyle(b1.position, 50));
-  ball2.setAttribute('style', posStyle(b2.position, 30));
-  ball3.setAttribute('style', posStyle(b3.position, 25));
-
+  var current = new Date().getTime();
   var dt = nbody.timer.dt;
   var time = nbody.timer.time;
+  var elapsed = current - lastTick;
 
-  nbody.step(time, dt);
+  nbody.timer.advance(dt * (elapsed/1000));
+
+  ball1.setAttribute('style', posStyle(b1.state.x, 50));
+  ball2.setAttribute('style', posStyle(b2.state.x, 30));
+  ball3.setAttribute('style', posStyle(b3.state.x, 25));
+
+  nbody.step(time, dt * (elapsed/1000));
   globalTime.innerHTML = readableTime(time);
+  lastTick = current;
 };
 
 tick();

@@ -1,66 +1,65 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var Body = require('./body');
 var timer = require('./timer');
-var _bodies = [];
 
-exports.createBody = function addBody (bodyProps) {
-  var newBody = Body.create(bodyProps);
-  _bodies.push(newBody);
-  return newBody;
-};
+var Bodies = {
+  createBody: function addBody (bodyProps) {
+    var newBody = Body.create(bodyProps);
+    this._bodies.push(newBody);
+    return newBody;
+  },
 
-exports.removeBody = function removeBody (body) {
-  for (var i = 0, l = _bodies.length; i < l; i += 1) {
-    if (_bodies[i] === body) {
-      var removed = _bodies.splice(i, 1);
-      return removed[0];
+  removeBody: function removeBody (body) {
+    for (var i = 0, l = _bodies.length; i < l; i += 1) {
+      if (this._bodies[i] === body) {
+        var removed = this._bodies.splice(i, 1);
+        return removed[0];
+      }
     }
+  },
+
+  getBodies: function getBodies () {
+    return this._bodies;
+  },
+
+  resetBodies: function reset () {
+    this._bodies = [];
+    return this._bodies;
   }
 };
 
-exports.getBodies = function getBodies () {
-  return _bodies;
-};
-
-exports.resetBodies = function reset () {
-  _bodies = [];
-  return _bodies;
+exports.create = function createBodies () {
+  var bodies = Object.create(Bodies);
+  bodies._bodies = [];
+  return bodies;
 };
 
 },{"./body":2,"./timer":5}],2:[function(require,module,exports){
-var G = 6.674e-11 //  N⋅m²/kg²
+var G = 6.674e-11; //  N⋅m²/kg²
 var assign = require('object-assign');
+
+var State = {
+  x: undefined,
+  dx: undefined,
+
+  create: function createState (x, dx) {
+    var s = Object.create(State);
+    s.x = x;
+    s.dx = dx;
+    return s;
+  }
+};
 
 var BodyPrototype = {
   applyForces: true,
+  state: undefined,
 
-  position: undefined,
-  velocity: undefined,
   _forces: undefined,
 
   mass: undefined,
   radius: undefined,
 
-  computeGravity: function computeGravity (body, distance) {
-    return (G * this.mass * body.mass) / (distance * distance)
-  },
-
-  computeDistance: function computeDistance (body) {
-    var dx = body.position[0] - this.position[0];
-    var dy = body.position[1] - this.position[1];
-    var dz = body.position[2] - this.position[2];
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  },
-
-  computeHeading: function computeHeading (body, distance) {
-   return [
-     (body.position[0] - this.position[0]) / distance,
-     (body.position[1] - this.position[1]) / distance,
-     (body.position[2] - this.position[2]) / distance
-   ];
-  },
-
-  computeAcceleration: function computeAcceleration (bodies) {
+  computeAcceleration: function computeAcceleration (bodies, state) {
     if (!this.applyForces) {
       return this._forces; // no force, no acceleration
     }
@@ -69,20 +68,13 @@ var BodyPrototype = {
     this._forces[1] = 0;
     this._forces[2] = 0;
 
-    if (this.velStart) {
-      this._forces[0] = 0.5 * this.mass * this.velStart[0];;
-      this._forces[1] = 0.5 * this.mass * this.velStart[1];;
-      this._forces[2] = 0.5 * this.mass * this.velStart[2];;
-      delete this.velStart;
-    }
+    bodies.forEach(function (otherBody) {
+      if (this !== otherBody) {
+        var dist = this.computeDistance(otherBody, state);
+        var heading = this.computeHeading(otherBody, state, dist);
+        var gravity = this.computeGravity(otherBody, dist);
 
-    bodies.forEach(function (body) {
-      if (this !== body) {
-        var dist = this.computeDistance(body);
-        var heading = this.computeHeading(body, dist);
-        var gravity = this.computeGravity(body, dist);
-
-        if (dist > this.radius + body.radius) {
+        if (dist > this.radius + otherBody.radius) {
           this._forces[0] += heading[0] * gravity;
           this._forces[1] += heading[1] * gravity;
           this._forces[2] += heading[2] * gravity;
@@ -93,21 +85,70 @@ var BodyPrototype = {
     return this._forces.map(function (force, i) {
       return force / this.mass;
     }, this);
+  },
+
+  initialDerivative: function (bodies) {
+    var acceleration = this.computeAcceleration(bodies, this.state);
+    return State.create(this.state.dx, acceleration);
+  },
+
+  nextDerivative: function (bodies, initialState, derivative, t, dt) {
+    var nextState = State.create([
+      initialState.x[0] + derivative.dx[0] * dt,
+      initialState.x[1] + derivative.dx[1] * dt,
+      initialState.x[2] + derivative.dx[2] * dt
+    ], [
+      initialState.dx[0] + derivative.dx[0] * dt,
+      initialState.dx[1] + derivative.dx[1] * dt,
+      initialState.dx[2] + derivative.dx[2] * dt
+    ]);
+
+    var acceleration = this.computeAcceleration(bodies, nextState, t + dt);
+    return State.create(nextState.dx, acceleration);
+  },
+
+  computeGravity: function computeGravity (otherBody, distance) {
+    return (G * this.mass * otherBody.mass) / (distance * distance);
+  },
+
+  computeDistance: function computeDistance (otherBody, state) {
+    var xdist = otherBody.state.x[0] - state.x[0];
+    var ydist = otherBody.state.x[1] - state.x[1];
+    var zdist = otherBody.state.x[2] - state.x[2];
+    return Math.sqrt(xdist * xdist + ydist * ydist + zdist * zdist);
+  },
+
+  computeHeading: function computeHeading (otherBody, state, distance) {
+   return [
+     (otherBody.state.x[0] - state.x[0]) / distance,
+     (otherBody.state.x[1] - state.x[1]) / distance,
+     (otherBody.state.x[2] - state.x[2]) / distance
+   ];
   }
 
 };
 
+function setCircularSpeed (body, barycenter, virtualCentralMass) {
+  var center = State.create(barycenter, [0, 0, 0]);
+  var dist = BodyPrototype.computeDistance(body, center);
+  var heading = BodyPrototype.computeHeading(body, center, dist);
+  var speed = Math.sqrt((G * (body.mass + virtualCentralMass)) / dist);
+  body.state.dx[0] = heading[1] * speed;
+  body.state.dx[1] = -heading[0] * speed;
+}
+
 exports.BodyPrototype = BodyPrototype;
+
 exports.create = function createBody (props) {
   var body = Object.create(BodyPrototype);
+  var pos = props.position || [0, 0, 0];
+  var vel = props.velocity || [0, 0, 0];
+
+  body.state = State.create(pos, vel);
 
   assign(body, {
     radius: props.radius || 0,
     mass: props.mass || 1,
-    position: props.position || [0, 0, 0],
-    velStart: props.velStart || [0, 0, 0],
-
-    velocity: props.velocity || [0, 0, 0],
     _forces: [0, 0, 0]
   });
 
@@ -115,86 +156,124 @@ exports.create = function createBody (props) {
     body.applyForces = false;
   }
 
+  if (props.circularStart) {
+    var bPos = props.cirularStart.barycenter;
+    var bMass = props.cirularStart.centralMass;
+    setCircularSpeed(body, bPos, bMass);
+  }
+
   return body;
 };
 
 },{"object-assign":6}],3:[function(require,module,exports){
-var bodiesStore = require('./bodies');
-
 function integrateEuler (body, bodies, dt) {
-  var steps = 8;
-  var delta = dt / steps;
-  var a = body.computeAcceleration(bodies);
+  var a = body.computeAcceleration(bodies, body.state);
 
-  for (var i = 0; i < steps; i += 1) {
-    body.velocity[0] += a[0] * delta;
-    body.velocity[1] += a[1] * delta;
-    body.velocity[2] += a[2] * delta;
-  }
+  body.state.dx[0] += a[0] * dt;
+  body.state.dx[1] += a[1] * dt;
+  body.state.dx[2] += a[2] * dt;
 
-
-  body.position[0] += body.velocity[0];
-  body.position[1] += body.velocity[1];
-  body.position[2] += body.velocity[2];
+  body.state.x[0] += body.state.dx[0] * dt;
+  body.state.x[1] += body.state.dx[1] * dt;
+  body.state.x[2] += body.state.dx[2] * dt;
 }
 
-function integrateRK4 (body, bodies, dt) {
+function integrateRK4 (body, bodies, t, dt) {
+  var initialState = body.state;
+  var d1 = body.initialDerivative(bodies);
+  var d2 = body.nextDerivative(bodies, initialState, d1, t, dt * 0.5);
+  var d3 = body.nextDerivative(bodies, initialState, d2, t, dt * 0.5);
+  var d4 = body.nextDerivative(bodies, initialState, d3, t, dt);
 
+  var vel0 = 1/6 * (d1.x[0] + 2 * (d2.x[0] + d3.x[0]) + d4.x[0]) * dt;
+  var vel1 = 1/6 * (d1.x[1] + 2 * (d2.x[1] + d3.x[1]) + d4.x[1]) * dt;
+  var vel2 = 1/6 * (d1.x[2] + 2 * (d2.x[2] + d3.x[2]) + d4.x[2]) * dt;
+
+  var acc0 = 1/6 * (d1.dx[0] + 2 * (d2.dx[0] + d3.dx[0]) + d4.dx[0]) * dt;
+  var acc1 = 1/6 * (d1.dx[1] + 2 * (d2.dx[1] + d3.dx[1]) + d4.dx[1]) * dt;
+  var acc2 = 1/6 * (d1.dx[2] + 2 * (d2.dx[2] + d3.dx[2]) + d4.dx[2]) * dt;
+
+  body.state.x[0] += vel0;
+  body.state.x[1] += vel1;
+  body.state.x[2] += vel2;
+
+  body.state.dx[0] += acc0;
+  body.state.dx[1] += acc1;
+  body.state.dx[2] += acc2;
 }
 
-function moveBodies (type, bodies, dt) {
+function moveBodies (type, bodies, t, dt) {
+  var steps = 4;
+
+  console.log(arguments);
   bodies.forEach(function (body) {
-    if (type === 'euler') {
-      integrateEuler(body, bodies, dt);
-    }
+    var step = 0;
+    for (; step < steps; step += 1) {
+      if (type === 'euler') {
+        integrateEuler(body, bodies, dt / steps);
+      }
 
-    if (type === 'rk4') {
-      integrateRK4(body, dt);
+      if (type === 'rk4') {
+        integrateRK4(body, bodies, t, dt / steps);
+      }
     }
   });
 }
 
-exports.step = function step (time, dt) {
-  var bodies = bodiesStore.getBodies();
-  moveBodies('euler', bodies, dt);
+exports.step = function configureStepper (bodies, timer) {
+  return function step () {
+    moveBodies('rk4', bodies.getBodies(), timer.time, timer.dt);
+    //moveBodies('euler', bodies, time, dt);
+  };
 };
 
 
-},{"./bodies":1}],4:[function(require,module,exports){
-var bodies = require('./bodies');
+},{}],4:[function(require,module,exports){
+var Bodies = require('./bodies');
 var compute = require('./compute');
-var timer = require('./timer');
+var Timer = require('./timer');
 
-window.nbody = Nbody = {
-  createBody: bodies.createBody,
-  getBodies: bodies.getBodies,
-  removeBody: bodies.removeBody,
-  step: compute.step,
-  timer: timer
+window.nbody = {
+  create: function () {
+    var sim = Object.create(null);
+    sim.bodies = Bodies.create();
+    sim.timer = Timer.create();
+    sim.step = compute.step(sim.bodies, sim.timer);
+
+    return sim;
+  }
 };
 
-module.exports = Nbody;
+module.exports = window.nbody;
 
 },{"./bodies":1,"./compute":3,"./timer":5}],5:[function(require,module,exports){
 var SECOND = 1000;
 var MINUTE = SECOND * 60;
-var HOUR   = MINUTE * 60;
-var DAY    = HOUR * 24;
-var MONTH  = DAY * 31;
-var YEAR   = DAY * 365;
-
-var time = 0;
-var dt = 1.5 * HOUR;
+var HOUR = MINUTE * 60;
+var DAY = HOUR * 24;
+var MONTH = DAY * 31;
+var YEAR = DAY * 36;
 
 var Timer = {
+  units: Object.freeze({
+    SECOND: SECOND,
+    MINUTE: MINUTE,
+    HOUR: HOUR,
+    DAY: DAY,
+    MONTH: MONTH,
+    YEAR: YEAR
+  }),
+
   time: 0,
-  dt: 1 * HOUR,
-  advance: function () {
-    this.time += this.dt;
+  dt: 5 * MINUTE,
+  advance: function (increment) {
+    this.time += increment || this.dt;
   }
 };
 
-module.exports = Timer;
+exports.create = function createTimer () {
+  return Object.create(Timer);
+};
 
 
 },{}],6:[function(require,module,exports){

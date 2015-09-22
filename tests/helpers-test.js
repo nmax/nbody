@@ -18,7 +18,7 @@ test('assign method', function (t) {
     value: 'such meta',
     enumerable: false,
     writeable: true
-  })
+  });
 
   var expectedResult = assign(target, source);
   t.equal(typeof expectedResult, 'object');
