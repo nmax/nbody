@@ -17,10 +17,7 @@
     "broccoli": "^0.16.8",
     "broccoli-merge-trees": "^0.2.3",
     "broccoli-multi-builder": "^0.2.8",
-    "tape": "^4.2.0"
-  },
-  "dependencies": {
-    "broccoli-funnel": "^0.2.8",
-    "object-assign": "^4.0.1"
+    "tape": "^4.2.0",
+    "broccoli-funnel": "^0.2.8"
   }
 }
