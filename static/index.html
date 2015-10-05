@@ -10,20 +10,23 @@
     }
     .ball {
       border-radius: 50%;
-      width: 100px;
-      height: 100px;
+      width: 10px;
+      height: 10px;
       position: absolute;
+      background-color: darkblue;
       -webkit-will-change: transform;
          -moz-will-change: transform;
               will-change: transform;
     }
     #ball1 {
       background-color: hotpink;
+      width: 25px;
+      height: 25px;
     }
     #ball2 {
       background-color: lightgreen;
-      width: 60px;
-      height: 60px;
+      width: 25px;
+      height: 25px;
     }
     #ball3 {
       background-color: darkblue;
@@ -36,7 +39,6 @@
   <div id="global-time"></div>
   <div id="ball1" class="ball"></div>
   <div id="ball2" class="ball"></div>
-  <div id="ball3" class="ball"></div>
 
   <script src="../dist/global/nbody.js"></script>
   <script src="vis.js"></script>
